@@ -41,6 +41,31 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["organizations"]["Insert"]>;
+        Relationships: [];
+      };
+      organization_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role_id: string | null;
+          status: string;
+          joined_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role_id?: string | null;
+          status?: string;
+          joined_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["organization_members"]["Insert"]
+        >;
+        Relationships: [];
       };
       branches: {
         Row: {
@@ -50,7 +75,10 @@ export type Database = {
           code: string;
           phone: string | null;
           email: string | null;
+          address_line_1: string | null;
+          address_line_2: string | null;
           city: string | null;
+          state: string | null;
           country: string | null;
           timezone: string;
           is_active: boolean;
@@ -64,7 +92,10 @@ export type Database = {
           code: string;
           phone?: string | null;
           email?: string | null;
+          address_line_1?: string | null;
+          address_line_2?: string | null;
           city?: string | null;
+          state?: string | null;
           country?: string | null;
           timezone?: string;
           is_active?: boolean;
@@ -72,6 +103,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["branches"]["Insert"]>;
+        Relationships: [];
       };
       products: {
         Row: {
@@ -107,10 +139,25 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
     Functions: {
+      create_retail_workspace: {
+        Args: {
+          organization_name: string;
+          organization_slug: string;
+          branch_name: string;
+          branch_code: string;
+          currency_code?: string;
+          timezone?: string;
+        };
+        Returns: {
+          organization_id: string;
+          branch_id: string;
+        }[];
+      };
       is_org_member: {
         Args: { target_organization_id: string };
         Returns: boolean;

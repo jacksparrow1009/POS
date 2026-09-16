@@ -6,12 +6,23 @@ import {
   products,
   setupSteps,
 } from "@/lib/pos-demo-data";
+import { signOut } from "@/app/auth/actions";
+import { SubmitButton } from "@/components/submit-button";
+import { getCurrentWorkspace } from "@/lib/workspace";
 
-export default function Home() {
+export default async function Home() {
+  const { organization, branch } = await getCurrentWorkspace();
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
   const discount = 320;
   const tax = 218;
   const total = subtotal - discount + tax;
+  const initials = organization.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const activeBranchName = branch?.name ?? "No active branch";
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-[#172026]">
@@ -19,10 +30,10 @@ export default function Home() {
         <aside className="border-r border-[#dfe3e8] bg-white px-4 py-5">
           <div className="mb-7 flex items-center gap-3 px-2">
             <div className="grid size-10 place-items-center rounded-md bg-[#0b5c5a] text-sm font-bold text-white">
-              AM
+              {initials}
             </div>
             <div>
-              <p className="text-sm font-semibold">Awan Mart</p>
+              <p className="text-sm font-semibold">{organization.name}</p>
               <p className="text-xs text-[#697680]">Retail POS SaaS</p>
             </div>
           </div>
@@ -46,8 +57,10 @@ export default function Home() {
             <p className="text-xs font-semibold uppercase tracking-wide text-[#697680]">
               Active branch
             </p>
-            <p className="mt-2 text-sm font-semibold">Gulberg Branch</p>
-            <p className="mt-1 text-xs text-[#697680]">Asia/Karachi • PKR</p>
+            <p className="mt-2 text-sm font-semibold">{activeBranchName}</p>
+            <p className="mt-1 text-xs text-[#697680]">
+              {branch?.timezone ?? organization.timezone} / {organization.currency_code}
+            </p>
           </div>
         </aside>
 
@@ -62,6 +75,14 @@ export default function Home() {
               </h1>
             </div>
             <div className="flex flex-wrap gap-2">
+              <form action={signOut}>
+                <SubmitButton
+                  className="h-10 rounded-md border border-[#cfd6dd] bg-white px-4 text-sm font-semibold"
+                  pendingLabel="Signing out..."
+                >
+                  Sign out
+                </SubmitButton>
+              </form>
               <button className="h-10 rounded-md border border-[#cfd6dd] bg-white px-4 text-sm font-semibold">
                 Import products
               </button>
@@ -167,7 +188,7 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">POS register</h2>
-                  <p className="mt-1 text-sm text-[#697680]">Shift 02 • Counter 1</p>
+                  <p className="mt-1 text-sm text-[#697680]">Shift 02 / Counter 1</p>
                 </div>
                 <span className="rounded bg-[#e8f4ee] px-2 py-1 text-xs font-semibold text-[#0f6848]">
                   Open

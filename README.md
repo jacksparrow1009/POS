@@ -38,3 +38,22 @@ Create `.env.local` from `.env.example`:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
+
+## Apply Database Schema
+
+Option A, Supabase SQL Editor:
+
+1. Open your Supabase project dashboard.
+2. Go to SQL Editor.
+3. Paste and run `supabase/apply-all.sql`.
+
+Option B, Supabase CLI:
+
+```bash
+npx supabase login
+npx supabase link --project-ref your-project-ref
+npx supabase db push
+```
+
+Use the project ref from your Supabase project URL. For example, in
+`https://abcdefghijk.supabase.co`, the ref is `abcdefghijk`.
