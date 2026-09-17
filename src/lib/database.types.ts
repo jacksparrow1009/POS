@@ -141,9 +141,123 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
         Relationships: [];
       };
+      product_variants: {
+        Row: {
+          id: string;
+          organization_id: string;
+          product_id: string;
+          name: string;
+          sku: string | null;
+          barcode: string | null;
+          cost_price: number;
+          selling_price: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          product_id: string;
+          name?: string;
+          sku?: string | null;
+          barcode?: string | null;
+          cost_price?: number;
+          selling_price?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["product_variants"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      branch_inventory: {
+        Row: {
+          id: string;
+          organization_id: string;
+          branch_id: string;
+          variant_id: string;
+          quantity_on_hand: number;
+          quantity_reserved: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          branch_id: string;
+          variant_id: string;
+          quantity_on_hand?: number;
+          quantity_reserved?: number;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["branch_inventory"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      inventory_movements: {
+        Row: {
+          id: string;
+          organization_id: string;
+          branch_id: string;
+          variant_id: string;
+          movement_type: string;
+          quantity: number;
+          reference_type: string | null;
+          reference_id: string | null;
+          unit_cost: number | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          branch_id: string;
+          variant_id: string;
+          movement_type: string;
+          quantity: number;
+          reference_type?: string | null;
+          reference_id?: string | null;
+          unit_cost?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["inventory_movements"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      adjust_branch_inventory: {
+        Args: {
+          p_organization_id: string;
+          p_branch_id: string;
+          p_variant_id: string;
+          p_adjustment: number;
+          p_notes: string;
+        };
+        Returns: number;
+      };
+      create_product_with_inventory: {
+        Args: {
+          p_organization_id: string;
+          p_branch_id: string;
+          p_name: string;
+          p_sku: string;
+          p_barcode: string;
+          p_cost_price: number;
+          p_selling_price: number;
+          p_opening_stock: number;
+          p_low_stock_threshold: number;
+        };
+        Returns: { product_id: string; variant_id: string }[];
+      };
       create_retail_workspace: {
         Args: {
           organization_name: string;
@@ -157,6 +271,28 @@ export type Database = {
           organization_id: string;
           branch_id: string;
         }[];
+      };
+      set_product_active_status: {
+        Args: {
+          p_organization_id: string;
+          p_product_id: string;
+          p_is_active: boolean;
+        };
+        Returns: undefined;
+      };
+      update_product_details: {
+        Args: {
+          p_organization_id: string;
+          p_product_id: string;
+          p_variant_id: string;
+          p_name: string;
+          p_sku: string;
+          p_barcode: string;
+          p_cost_price: number;
+          p_selling_price: number;
+          p_low_stock_threshold: number;
+        };
+        Returns: undefined;
       };
       is_org_member: {
         Args: { target_organization_id: string };

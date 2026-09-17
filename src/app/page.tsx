@@ -2,73 +2,95 @@ import {
   activity,
   cart,
   metrics,
-  navItems,
-  products,
   setupSteps,
 } from "@/lib/pos-demo-data";
 import { signOut } from "@/app/auth/actions";
+import { AppSidebar } from "@/components/app-sidebar";
 import { SubmitButton } from "@/components/submit-button";
 import { getCurrentWorkspace } from "@/lib/workspace";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function Home() {
   const { organization, branch } = await getCurrentWorkspace();
+  const supabase = await createClient();
+  const [{ data: catalogProducts }, { data: catalogVariants }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("id, name, low_stock_threshold")
+      .eq("organization_id", organization.id)
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("product_variants")
+      .select("id, product_id, sku")
+      .eq("organization_id", organization.id)
+      .eq("is_active", true),
+  ]);
+  const variantIds = (catalogVariants ?? []).map((variant) => variant.id);
+  const { data: branchStock } = branch && variantIds.length
+    ? await supabase
+        .from("branch_inventory")
+        .select("variant_id, quantity_on_hand, quantity_reserved")
+        .eq("branch_id", branch.id)
+        .in("variant_id", variantIds)
+    : { data: [] };
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
   const discount = 320;
   const tax = 218;
   const total = subtotal - discount + tax;
-  const initials = organization.name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
   const activeBranchName = branch?.name ?? "No active branch";
+  const variantByProduct = new Map(
+    (catalogVariants ?? []).map((variant) => [variant.product_id, variant]),
+  );
+  const stockByVariant = new Map(
+    (branchStock ?? []).map((stock) => [stock.variant_id, stock]),
+  );
+  const inventoryProducts = (catalogProducts ?? []).map((product) => {
+    const variant = variantByProduct.get(product.id);
+    const stock = variant ? stockByVariant.get(variant.id) : undefined;
+    return {
+      id: product.id,
+      name: product.name,
+      sku: variant?.sku ?? "No SKU",
+      stock: Number(stock?.quantity_on_hand ?? 0) - Number(stock?.quantity_reserved ?? 0),
+      alert: Number(product.low_stock_threshold),
+    };
+  });
+  const lowStockCount = inventoryProducts.filter(
+    (product) => product.stock <= product.alert,
+  ).length;
+  const dashboardMetrics = metrics.map((metric) =>
+    metric.label === "Low stock"
+      ? { ...metric, value: `${lowStockCount} SKUs`, delta: lowStockCount ? "Needs review" : "Stock healthy" }
+      : metric,
+  );
+  const dashboardSetupSteps = setupSteps.map((step) =>
+    step.label === "Products imported" || step.label === "Opening stock added"
+      ? { ...step, done: inventoryProducts.length > 0 }
+      : step,
+  );
+  const currentDate = new Intl.DateTimeFormat("en-PK", {
+    dateStyle: "full",
+    timeZone: organization.timezone,
+  }).format(new Date());
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-[#172026]">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[244px_1fr]">
-        <aside className="border-r border-[#dfe3e8] bg-white px-4 py-5">
-          <div className="mb-7 flex items-center gap-3 px-2">
-            <div className="grid size-10 place-items-center rounded-md bg-[#0b5c5a] text-sm font-bold text-white">
-              {initials}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">{organization.name}</p>
-              <p className="text-xs text-[#697680]">Retail POS SaaS</p>
-            </div>
-          </div>
-
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <button
-                className={`flex h-10 w-full items-center rounded-md px-3 text-left text-sm font-medium ${
-                  item === "Dashboard"
-                    ? "bg-[#e6f2ef] text-[#0b5c5a]"
-                    : "text-[#53606b] hover:bg-[#f1f3f5]"
-                }`}
-                key={item}
-              >
-                {item}
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-8 rounded-md border border-[#dfe3e8] bg-[#fbfcfc] p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#697680]">
-              Active branch
-            </p>
-            <p className="mt-2 text-sm font-semibold">{activeBranchName}</p>
-            <p className="mt-1 text-xs text-[#697680]">
-              {branch?.timezone ?? organization.timezone} / {organization.currency_code}
-            </p>
-          </div>
-        </aside>
+        <AppSidebar
+          activeItem="Dashboard"
+          branchName={activeBranchName}
+          currency={organization.currency_code}
+          organizationName={organization.name}
+          timezone={branch?.timezone ?? organization.timezone}
+        />
 
         <section className="min-w-0">
           <header className="flex flex-col gap-4 border-b border-[#dfe3e8] bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#697680]">
-                Thursday, September 17
+                {currentDate}
               </p>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal">
                 Store operations
@@ -95,7 +117,7 @@ export default async function Home() {
           <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px]">
             <section className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {metrics.map((metric) => (
+                {dashboardMetrics.map((metric) => (
                   <article
                     className="rounded-md border border-[#dfe3e8] bg-white p-4"
                     key={metric.label}
@@ -128,14 +150,14 @@ export default async function Home() {
                         </tr>
                       </thead>
                       <tbody>
-                        {products.map((product) => (
-                          <tr className="border-t border-[#edf0f2]" key={product.sku}>
+                        {inventoryProducts.slice(0, 6).map((product) => (
+                          <tr className="border-t border-[#edf0f2]" key={product.id}>
                             <td className="px-4 py-3 font-mono text-xs">
                               {product.sku}
                             </td>
                             <td className="px-4 py-3 font-medium">{product.name}</td>
                             <td className="px-4 py-3 text-[#53606b]">
-                              {product.branch}
+                              {activeBranchName}
                             </td>
                             <td className="px-4 py-3">
                               <span
@@ -153,12 +175,17 @@ export default async function Home() {
                       </tbody>
                     </table>
                   </div>
+                  {inventoryProducts.length === 0 ? (
+                    <div className="border-t border-[#edf0f2] px-4 py-8 text-center text-sm text-[#697680]">
+                      No products yet. <Link className="font-semibold text-[#0b5c5a]" href="/products">Add your first product</Link>.
+                    </div>
+                  ) : null}
                 </article>
 
                 <article className="rounded-md border border-[#dfe3e8] bg-white p-4">
                   <h2 className="text-base font-semibold">Setup progress</h2>
                   <div className="mt-4 space-y-3">
-                    {setupSteps.map(({ label, done }) => (
+                    {dashboardSetupSteps.map(({ label, done }) => (
                       <div className="flex items-center gap-3" key={String(label)}>
                         <span
                           className={`size-3 rounded-full ${
