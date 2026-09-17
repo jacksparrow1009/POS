@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { PackagePlus, Plus, X } from "lucide-react";
 import { createProduct } from "@/app/products/actions";
 import { SubmitButton } from "@/components/submit-button";
 
@@ -20,28 +21,43 @@ export function CreateProductDialog({ error }: CreateProductDialogProps) {
   return (
     <>
       <button
-        className="h-10 rounded-md bg-[#0b5c5a] px-4 text-sm font-semibold text-white"
+        className="inline-flex h-10 items-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
         onClick={() => dialogRef.current?.showModal()}
         type="button"
       >
+        <Plus aria-hidden="true" size={17} strokeWidth={2} />
         Add product
       </button>
 
       <dialog
         aria-labelledby="create-product-title"
-        className="m-auto w-[calc(100%-2rem)] max-w-xl rounded-md border border-[#dfe3e8] bg-white p-0 text-[#172026] shadow-xl backdrop:bg-black/35"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-md border border-border bg-surface p-0 text-foreground shadow-xl backdrop:bg-black/35"
         ref={dialogRef}
       >
-        <div className="border-b border-[#edf0f2] px-5 py-4">
-          <h2 className="text-lg font-semibold" id="create-product-title">Add product</h2>
-          <p className="mt-1 text-sm text-[#697680]">
-            Create the default variant and opening stock together.
-          </p>
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+          <div className="flex gap-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+              <PackagePlus aria-hidden="true" size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold" id="create-product-title">Add product</h2>
+              <p className="mt-1 text-sm text-muted">Create its default variant and opening stock.</p>
+            </div>
+          </div>
+          <button
+            aria-label="Close dialog"
+            className="grid size-9 shrink-0 place-items-center rounded-md text-muted hover:bg-surface-subtle hover:text-foreground"
+            onClick={() => dialogRef.current?.close()}
+            title="Close"
+            type="button"
+          >
+            <X aria-hidden="true" size={19} />
+          </button>
         </div>
 
         <form action={createProduct} className="space-y-4 p-5">
           {error ? (
-            <p className="rounded-md border border-[#ffd8a8] bg-[#fff8ef] p-3 text-sm text-[#8a5300]">
+            <p className="rounded-md border border-warning/25 bg-warning-soft p-3 text-sm text-warning">
               {error}
             </p>
           ) : null}
@@ -60,16 +76,16 @@ export function CreateProductDialog({ error }: CreateProductDialogProps) {
             <Field defaultValue="5" label="Low-stock alert" min="0" name="lowStockThreshold" required step="0.001" type="number" />
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-[#edf0f2] pt-4">
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
             <button
-              className="h-10 rounded-md border border-[#cfd6dd] bg-white px-4 text-sm font-semibold"
+              className="h-10 rounded-md border border-border-strong bg-surface px-4 text-sm font-semibold text-muted-strong hover:bg-surface-subtle"
               onClick={() => dialogRef.current?.close()}
               type="button"
             >
               Cancel
             </button>
             <SubmitButton
-              className="h-10 rounded-md bg-[#0b5c5a] px-4 text-sm font-semibold text-white"
+              className="h-10 rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-hover"
               pendingLabel="Adding product..."
             >
               Add product
@@ -91,7 +107,7 @@ function Field({ label, ...props }: FieldProps) {
     <label className="block">
       <span className="text-sm font-medium">{label}</span>
       <input
-        className="mt-2 h-11 w-full rounded-md border border-[#cfd6dd] px-3 text-sm outline-none focus:border-[#0b5c5a]"
+        className="mt-2 h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/10"
         {...props}
       />
     </label>
