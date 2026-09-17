@@ -1,6 +1,6 @@
 import { CreateProductDialog } from "@/app/products/create-product-dialog";
 import { ProductCatalog, type CatalogItem } from "@/app/products/product-catalog";
-import { AppSidebar } from "@/components/app-sidebar";
+import { CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
@@ -68,21 +68,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   });
 
   return (
-    <main className="min-h-screen bg-[#f6f7f9] text-[#172026]">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[244px_1fr]">
-        <AppSidebar
-          activeItem="Products"
-          branchName={branch?.name ?? "No active branch"}
-          currency={currency}
-          organizationName={organization.name}
-          timezone={branch?.timezone ?? organization.timezone}
-        />
-
         <section className="min-w-0">
-          <header className="flex flex-col gap-4 border-b border-[#dfe3e8] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <header className="flex min-h-20 flex-col gap-4 border-b border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
             <div>
-              <h1 className="text-2xl font-semibold">Products</h1>
-              <p className="mt-1 text-sm text-[#697680]">
+              <p className="text-xs font-semibold uppercase text-muted">Catalog</p>
+              <h1 className="mt-1 text-xl font-semibold">Products</h1>
+              <p className="mt-1 text-sm text-muted">
                 {products.length} products / Prices in {currency}
               </p>
             </div>
@@ -90,14 +81,15 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </header>
 
           {created ? (
-            <div className="px-5 pt-5">
-              <p className="rounded-md border border-[#b7dfce] bg-[#edf8f3] p-3 text-sm text-[#0f6848]">
+            <div className="px-5 pt-5 lg:px-6">
+              <p className="flex items-center gap-2 rounded-md border border-success/20 bg-success-soft p-3 text-sm font-medium text-success">
+                <CheckCircle2 aria-hidden="true" size={17} />
                 Product created successfully.
               </p>
             </div>
           ) : null}
 
-          <div className="p-5">
+          <div className="p-5 lg:p-6">
             <ProductCatalog
               branchName={branch?.name ?? "your active branch"}
               currency={currency}
@@ -105,7 +97,5 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             />
           </div>
         </section>
-      </div>
-    </main>
   );
 }
