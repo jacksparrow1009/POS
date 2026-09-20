@@ -6,20 +6,22 @@ type SubmitButtonProps = {
   children: React.ReactNode;
   pendingLabel: string;
   className?: string;
+  disabled?: boolean;
 };
 
 export function SubmitButton({
   children,
   pendingLabel,
   className = "",
+  disabled = false,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
     <button
-      aria-disabled={pending}
+      aria-disabled={pending || disabled}
       className={`${className} inline-flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-70`}
-      disabled={pending}
+      disabled={pending || disabled}
       type="submit"
     >
       {pending ? (

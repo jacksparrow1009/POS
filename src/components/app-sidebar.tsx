@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Boxes,
@@ -29,12 +30,15 @@ type AppSidebarProps = {
 
 const routes: Partial<Record<(typeof navItems)[number], string>> = {
   Dashboard: "/",
+  POS: "/pos",
+  Sales: "/pos/sales",
   Products: "/products",
 };
 
 const icons: Record<(typeof navItems)[number], LucideIcon> = {
   Dashboard: LayoutDashboard,
   POS: ShoppingCart,
+  Sales: ReceiptText,
   Products: Package,
   Inventory: Boxes,
   Purchases: ReceiptText,
@@ -44,6 +48,7 @@ const icons: Record<(typeof navItems)[number], LucideIcon> = {
 };
 
 export function AppSidebar(props: AppSidebarProps) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const initials = props.organizationName
     .split(/\s+/)
@@ -95,7 +100,7 @@ export function AppSidebar(props: AppSidebarProps) {
           {navItems.map((item) => {
             const href = routes[item];
             const Icon = icons[item];
-            const active = item === props.activeItem;
+            const active = item === (pathname.startsWith("/pos/sales") ? "Sales" : props.activeItem);
             const className = `flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium transition-colors ${
               active
                 ? "bg-brand-soft text-brand"
