@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Share2 } from "lucide-react";
 import { PrintReceiptButton } from "@/app/pos/receipt/[id]/print-button";
 import { ReturnForm, type ReturnableLine } from "@/app/pos/receipt/[id]/return-form";
 import { createClient } from "@/lib/supabase/server";
@@ -69,34 +69,66 @@ export default async function ReceiptPage({ params, searchParams }: {
     && returnable.some((line) => line.remaining > 0);
   const currency = organization.currency_code.trim();
   const money = (value: number) => `${currency} ${Number(value).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedDate = new Intl.DateTimeFormat("en-PK", { dateStyle: "medium", timeStyle: "short", timeZone: organization.timezone }).format(new Date(sale.created_at));
+
+  const whatsappText = `Thank you for shopping with ${organization.name}!\nReceipt: ${sale.receipt_number}\nDate: ${formattedDate}\nTotal: ${money(sale.grand_total)}\n\nItems:\n` +
+    (lines ?? []).map((line) => {
+      const v = variantsById.get(line.variant_id);
+      const name = v ? productsById.get(v.product_id)?.name ?? "Item" : "Item";
+      return `• ${name} (${line.quantity}x) - ${money(line.line_total)}`;
+    }).join("\n");
+
   return <section className="min-w-0">
     <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-4 lg:px-6 print:hidden">
       <div><p className="flex items-center gap-2 text-xs font-semibold text-success"><CheckCircle2 size={16} /> Sale completed</p>
         <h1 className="mt-1 text-xl font-semibold">Receipt {sale.receipt_number}</h1></div>
-      <div className="flex gap-2"><Link href="/pos/sales" className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold"><ArrowLeft size={17} /> Sales</Link>
-        <PrintReceiptButton /></div>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/pos/sales" className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold hover:bg-surface-subtle">
+          <ArrowLeft size={17} /> Sales
+        </Link>
+        <a
+          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-semibold text-muted-strong hover:bg-surface-subtle"
+          title="Share receipt via WhatsApp"
+        >
+          <Share2 size={16} /> WhatsApp
+        </a>
+        <PrintReceiptButton />
+      </div>
     </header>
     {returned ? <p role="status" className="mx-auto mt-5 max-w-md rounded-md bg-success-soft p-3 text-sm font-medium text-success print:hidden">Return recorded and stock restored.</p> : null}
     <div className="mx-auto max-w-md p-5 print:max-w-none print:p-0">
-      <article className="border border-border bg-surface p-5 print:border-0 print:p-0">
-        <div className="border-b border-border pb-4 text-center"><h2 className="text-lg font-semibold">{organization.name}</h2>
-          <p className="mt-1 text-xs text-muted">{branch?.id === sale.branch_id ? branch.name : "Store receipt"}</p>
-          <p className="mt-3 font-mono text-sm">{sale.receipt_number}</p>
-          <p className="mt-1 text-xs text-muted">{new Intl.DateTimeFormat("en-PK", { dateStyle: "medium", timeStyle: "short", timeZone: organization.timezone }).format(new Date(sale.created_at))}</p></div>
-        <div className="divide-y divide-border">{(lines ?? []).map((line, index) => {
+      <article className="rounded-md border border-border bg-surface p-6 shadow-xs print:border-0 print:p-2 print:shadow-none print:w-[80mm] print:max-w-[80mm] print:mx-auto">
+        <div className="border-b border-border pb-4 text-center">
+          <h2 className="text-lg font-bold">{organization.name}</h2>
+          <p className="mt-0.5 text-xs text-muted">{branch?.id === sale.branch_id ? branch.name : "Store receipt"}</p>
+          <p className="mt-2 font-mono text-sm font-semibold">{sale.receipt_number}</p>
+          <p className="mt-0.5 text-xs text-muted">{formattedDate}</p>
+        </div>
+        <div className="divide-y divide-border/60">{(lines ?? []).map((line, index) => {
           const variant = variantsById.get(line.variant_id);
           return <div key={`${line.variant_id}-${index}`} className="flex justify-between gap-3 py-3 text-sm">
             <div><p className="font-medium">{variant ? productsById.get(variant.product_id)?.name ?? "Product" : "Product"}</p>
-              <p className="mt-1 text-xs text-muted">{line.quantity} x {money(line.unit_price)}</p></div>
+              <p className="mt-0.5 text-xs text-muted">{line.quantity} x {money(line.unit_price)}</p></div>
             <span className="shrink-0 font-semibold tabular-nums">{money(line.line_total)}</span></div>;
         })}</div>
         <div className="space-y-2 border-t border-border pt-4 text-sm">
-          <div className="flex justify-between"><span>Subtotal</span><span>{money(sale.subtotal)}</span></div>
-          <div className="flex justify-between text-base font-semibold"><span>Total</span><span>{money(sale.grand_total)}</span></div>
-          <div className="flex justify-between"><span>Cash received</span><span>{money(Number(payment?.amount ?? 0) + Number(sale.change_total))}</span></div>
-          <div className="flex justify-between"><span>Change</span><span>{money(sale.change_total)}</span></div>
+          <div className="flex justify-between text-muted"><span>Subtotal</span><span className="tabular-nums font-medium text-foreground">{money(sale.subtotal)}</span></div>
+          <div className="flex justify-between text-base font-bold"><span>Total</span><span className="tabular-nums text-brand">{money(sale.grand_total)}</span></div>
+          <div className="flex justify-between text-muted"><span>Cash received</span><span className="tabular-nums font-medium text-foreground">{money(Number(payment?.amount ?? 0) + Number(sale.change_total))}</span></div>
+          <div className="flex justify-between text-muted"><span>Change</span><span className="tabular-nums font-medium text-foreground">{money(sale.change_total)}</span></div>
         </div>
-        <p className="mt-8 text-center text-xs text-muted">Thank you for shopping with us.</p>
+        <div className="mt-8 border-t border-dashed border-border pt-4 text-center text-xs text-muted">
+          <p className="font-medium text-foreground">Thank you for shopping with us!</p>
+          <p className="mt-1 font-sans text-xs text-muted-strong" dir="rtl">
+            تبدیلی یا واپسی کے لیے 3 دن کے اندر رسید لانا لازمی ہے۔
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted">
+            Exchange within 3 days with original bill.
+          </p>
+        </div>
       </article>
       <div className="mt-5 space-y-5 print:hidden">
         {(returns ?? []).length ? <section className="border border-border bg-surface p-5">

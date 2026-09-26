@@ -1,3 +1,4 @@
+import { BarcodeLabelsDialog } from "@/app/products/barcode-labels-dialog";
 import { CreateProductDialog } from "@/app/products/create-product-dialog";
 import { ProductCatalog, type CatalogItem } from "@/app/products/product-catalog";
 import { CheckCircle2 } from "lucide-react";
@@ -77,7 +78,20 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 {products.length} products / Prices in {currency}
               </p>
             </div>
-            <CreateProductDialog error={message} />
+            <div className="flex flex-wrap items-center gap-2">
+              <BarcodeLabelsDialog
+                products={catalogItems.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                  sku: item.sku,
+                  barcode: item.barcode,
+                  price: item.sellingPrice,
+                }))}
+                currency={currency}
+                storeName={organization.name}
+              />
+              <CreateProductDialog error={message} />
+            </div>
           </header>
 
           {created ? (
