@@ -1,12 +1,9 @@
 import {
   activity,
-  cart,
   metrics,
   setupSteps,
 } from "@/lib/pos-demo-data";
-import { signOut } from "@/app/auth/actions";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SubmitButton } from "@/components/submit-button";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -14,8 +11,8 @@ import {
   ArrowRight,
   Banknote,
   CircleCheck,
-  LogOut,
   PackageSearch,
+  ReceiptText,
   ShoppingCart,
   TrendingUp,
   TriangleAlert,
@@ -23,21 +20,31 @@ import {
 } from "lucide-react";
 
 export default async function Home() {
-  const { organization, branch } = await getCurrentWorkspace();
+  const { organization, branch, branches } = await getCurrentWorkspace();
   const supabase = await createClient();
-  const [{ data: catalogProducts }, { data: catalogVariants }] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, low_stock_threshold")
-      .eq("organization_id", organization.id)
-      .eq("is_active", true)
-      .order("updated_at", { ascending: false }),
-    supabase
-      .from("product_variants")
-      .select("id, product_id, sku")
-      .eq("organization_id", organization.id)
-      .eq("is_active", true),
-  ]);
+  const [{ data: catalogProducts }, { data: catalogVariants }, { data: openShift }] =
+    await Promise.all([
+      supabase
+        .from("products")
+        .select("id, name, low_stock_threshold")
+        .eq("organization_id", organization.id)
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("product_variants")
+        .select("id, product_id, sku")
+        .eq("organization_id", organization.id)
+        .eq("is_active", true),
+      branch
+        ? supabase
+            .from("register_shifts")
+            .select("id, opening_cash, opened_at")
+            .eq("organization_id", organization.id)
+            .eq("branch_id", branch.id)
+            .eq("status", "open")
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
   const variantIds = (catalogVariants ?? []).map((variant) => variant.id);
   const { data: branchStock } = branch && variantIds.length
     ? await supabase
@@ -46,10 +53,6 @@ export default async function Home() {
         .eq("branch_id", branch.id)
         .in("variant_id", variantIds)
     : { data: [] };
-  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-  const discount = 320;
-  const tax = 218;
-  const total = subtotal - discount + tax;
   const activeBranchName = branch?.name ?? "No active branch";
   const variantByProduct = new Map(
     (catalogVariants ?? []).map((variant) => [variant.product_id, variant]),
@@ -92,7 +95,9 @@ export default async function Home() {
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[244px_minmax(0,1fr)]">
         <AppSidebar
           activeItem="Dashboard"
+          branchId={branch?.id}
           branchName={activeBranchName}
+          branches={branches}
           currency={organization.currency_code}
           organizationName={organization.name}
           timezone={branch?.timezone ?? organization.timezone}
@@ -109,15 +114,6 @@ export default async function Home() {
               </h1>
             </div>
             <div className="flex flex-wrap gap-2">
-              <form action={signOut}>
-                <SubmitButton
-                  className="h-10 rounded-md border border-border-strong bg-surface px-3 text-sm font-semibold text-muted-strong hover:bg-surface-subtle"
-                  pendingLabel="Signing out..."
-                >
-                  <LogOut aria-hidden="true" size={16} />
-                  Sign out
-                </SubmitButton>
-              </form>
               <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-hover" href="/products">
                 <ShoppingCart aria-hidden="true" size={17} />
                 Manage products
@@ -232,78 +228,115 @@ export default async function Home() {
               </article>
             </section>
 
-            <aside className="self-start rounded-md border border-border bg-surface p-4 2xl:sticky 2xl:top-5">
+            <aside className="self-start rounded-md border border-border bg-surface p-5 2xl:sticky 2xl:top-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold">Register preview</h2>
-                  <p className="mt-1 text-xs text-muted">Shift 02 / Counter 1</p>
+                  <h2 className="text-sm font-semibold">Counter register</h2>
+                  <p className="mt-0.5 text-xs text-muted">{activeBranchName}</p>
                 </div>
-                <span className="rounded bg-surface-subtle px-2 py-1 text-xs font-semibold text-muted-strong">
-                  Preview
-                </span>
+                {openShift ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+                    <span className="size-2 rounded-full bg-success" />
+                    Open
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning">
+                    <span className="size-2 rounded-full bg-warning" />
+                    Closed
+                  </span>
+                )}
               </div>
 
-              <label className="mt-5 block">
-                <span className="text-xs font-semibold uppercase text-muted">
-                  Barcode or search
-                </span>
-                <input
-                  className="mt-2 h-11 w-full rounded-md border border-border bg-surface-subtle px-3 text-sm text-muted"
-                  disabled
-                  placeholder="Scan barcode or type product name"
-                />
-              </label>
-
-              <div className="mt-5 space-y-3">
-                {cart.map((item) => (
-                  <div
-                    className="flex items-center justify-between rounded-md border border-border p-3"
-                    key={item.name}
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="mt-1 text-xs text-muted">Qty {item.qty}</p>
+              <div className="mt-4 rounded-md border border-border bg-surface-subtle p-3.5 text-sm">
+                {openShift ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted">
+                      <span>Shift started</span>
+                      <span className="font-medium text-foreground">
+                        {new Intl.DateTimeFormat("en-PK", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: branch?.timezone ?? organization.timezone,
+                        }).format(new Date(openShift.opened_at))}
+                      </span>
                     </div>
-                    <p className="text-sm font-semibold">
-                      PKR {item.price.toLocaleString()}
-                    </p>
+                    <div className="flex justify-between border-t border-border/70 pt-2 text-xs text-muted">
+                      <span>Opening cash</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {organization.currency_code} {Number(openShift.opening_cash).toLocaleString("en-PK", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
                   </div>
-                ))}
+                ) : (
+                  <p className="text-xs text-muted">
+                    No active shift open for this counter. Open the register to record sales and cash drawers.
+                  </p>
+                )}
               </div>
 
-              <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-                <div className="flex justify-between text-muted-strong">
-                  <span>Subtotal</span>
-                  <span>PKR {subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-muted-strong">
-                  <span>Discount</span>
-                  <span>-PKR {discount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-muted-strong">
-                  <span>Tax</span>
-                  <span>PKR {tax.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between pt-3 text-lg font-semibold">
-                  <span>Total</span>
-                  <span>PKR {total.toLocaleString()}</span>
-                </div>
-              </div>
+              <Link
+                href="/pos"
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-hover"
+              >
+                {openShift ? (
+                  <>
+                    <ShoppingCart aria-hidden="true" size={17} />
+                    Go to POS register
+                  </>
+                ) : (
+                  <>
+                    <Banknote aria-hidden="true" size={17} />
+                    Open register counter
+                  </>
+                )}
+              </Link>
 
-              <div className="mt-5 grid grid-cols-3 gap-2">
-                {["Cash", "Card", "Bank"].map((method) => (
-                  <button
-                    className="h-10 rounded-md border border-border bg-surface-subtle text-sm font-semibold text-muted"
-                    disabled
-                    key={method}
+              <div className="mt-6 border-t border-border pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  Quick shortcuts
+                </h3>
+                <div className="mt-3 space-y-1.5">
+                  <Link
+                    href="/pos"
+                    className="flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium text-muted-strong transition-colors hover:bg-surface-subtle hover:text-foreground"
                   >
-                    {method}
-                  </button>
-                ))}
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart aria-hidden="true" size={15} className="text-brand" />
+                      Point of sale
+                    </span>
+                    <ArrowRight aria-hidden="true" size={13} className="text-muted" />
+                  </Link>
+
+                  <Link
+                    href="/pos/sales"
+                    className="flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium text-muted-strong transition-colors hover:bg-surface-subtle hover:text-foreground"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ReceiptText aria-hidden="true" size={15} className="text-brand" />
+                      Sales history &amp; returns
+                    </span>
+                    <ArrowRight aria-hidden="true" size={13} className="text-muted" />
+                  </Link>
+
+                  <Link
+                    href="/products"
+                    className="flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium text-muted-strong transition-colors hover:bg-surface-subtle hover:text-foreground"
+                  >
+                    <span className="flex items-center gap-2">
+                      <PackageSearch aria-hidden="true" size={15} className="text-brand" />
+                      Product catalog &amp; stock
+                    </span>
+                    <ArrowRight aria-hidden="true" size={13} className="text-muted" />
+                  </Link>
+                </div>
               </div>
-              <button className="mt-3 h-11 w-full rounded-md bg-brand text-sm font-semibold text-white opacity-60" disabled>
-                POS coming next
-              </button>
+
+              <div className="mt-5 rounded-md border border-border/80 bg-surface-subtle/70 p-3 text-[11px] text-muted">
+                <p className="font-semibold text-muted-strong">{organization.name}</p>
+                <p className="mt-0.5">
+                  Timezone: {branch?.timezone ?? organization.timezone} · Currency: {organization.currency_code}
+                </p>
+              </div>
             </aside>
           </div>
         </section>
