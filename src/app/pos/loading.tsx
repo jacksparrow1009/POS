@@ -2,19 +2,27 @@ import { Skeleton } from "@/components/loading-skeletons";
 
 export default function PosLoading() {
   return (
-    <section aria-busy="true" aria-label="Loading register" className="min-w-0 animate-pulse">
-      <header className="flex h-20 items-center justify-between border-b border-border bg-surface px-5">
-        <Skeleton className="h-6 w-28" /><Skeleton className="h-9 w-32" />
-      </header>
-      <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-4"><Skeleton className="h-11 w-full" />
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+    <div className="grid min-h-[calc(100vh-4rem)] lg:min-h-screen grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="flex flex-col min-w-0 border-r border-border p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-28" />
         </div>
-        <div className="space-y-4 border border-border bg-surface p-4">
-          <Skeleton className="h-5 w-28" /><Skeleton className="h-52 w-full" />
-          <Skeleton className="h-11 w-full" /><Skeleton className="h-11 w-full" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-md" />
+          ))}
         </div>
-      </div>
-    </section>
+      </section>
+      <section className="hidden xl:flex flex-col bg-surface p-4 space-y-4">
+        <Skeleton className="h-7 w-32" />
+        <div className="flex-1 space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-14 w-full" />
+      </section>
+    </div>
   );
 }

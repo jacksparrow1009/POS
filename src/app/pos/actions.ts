@@ -7,13 +7,22 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
 const money = z.coerce.number().finite().min(0).max(999999999999.99);
+const quantitySchema = z.coerce
+  .number()
+  .positive()
+  .max(999999)
+  .refine(
+    (val) => Number(val.toFixed(3)) === val,
+    "Quantity cannot have more than 3 decimal places",
+  );
+
 const checkoutSchema = z.object({
   shiftId: z.string().uuid(),
   checkoutKey: z.string().uuid(),
   cashReceived: money,
   items: z.array(z.object({
     variant_id: z.string().uuid(),
-    quantity: z.number().int().min(1).max(999999),
+    quantity: quantitySchema,
   })).min(1).max(100),
 });
 
@@ -90,7 +99,22 @@ export async function completeCashSale(
     p_cash_received: parsed.data.cashReceived,
   });
   if (error || !saleId) return { error: saleError(error?.message ?? "") };
+
+  const customerId = formData.get("customerId");
+  if (
+    customerId &&
+    typeof customerId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(customerId)
+  ) {
+    await supabase
+      .from("sales")
+      .update({ customer_id: customerId })
+      .eq("id", saleId)
+      .eq("organization_id", organization.id);
+  }
+
   revalidatePath("/pos");
+  revalidatePath("/customers");
   revalidatePath("/products");
   revalidatePath("/");
   redirect(`/pos/receipt/${saleId}`);

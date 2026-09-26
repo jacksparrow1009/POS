@@ -13,7 +13,8 @@ export default async function PosPage({ searchParams }: {
       <p className="mt-3 text-sm text-muted">Create an active branch before opening a register.</p></section>;
   }
   const [{ data: shift, error: shiftError }, { data: products, error: productsError },
-    { data: variants, error: variantsError }, { data: stock, error: stockError }] = await Promise.all([
+    { data: variants, error: variantsError }, { data: stock, error: stockError },
+    { data: customers }] = await Promise.all([
     supabase.from("register_shifts").select("id, opening_cash, opened_at, opened_by")
       .eq("organization_id", organization.id).eq("branch_id", branch.id)
       .eq("status", "open").maybeSingle(),
@@ -23,6 +24,8 @@ export default async function PosPage({ searchParams }: {
       .eq("organization_id", organization.id).eq("is_active", true),
     supabase.from("branch_inventory").select("variant_id, quantity_on_hand, quantity_reserved")
       .eq("organization_id", organization.id).eq("branch_id", branch.id),
+    supabase.from("customers").select("id, name, phone")
+      .eq("organization_id", organization.id).order("name"),
   ]);
   if (shiftError || productsError || variantsError || stockError) {
     throw new Error("Could not load the register. Please try again.");
@@ -39,5 +42,6 @@ export default async function PosPage({ searchParams }: {
         Number(inventory?.quantity_reserved ?? 0)) }];
   });
   return <PosRegister items={items} shift={shift} branchName={branch.name}
-    currency={organization.currency_code.trim()} error={error} />;
+    currency={organization.currency_code.trim()} error={error}
+    customers={(customers ?? []).map((c) => ({ id: c.id, name: c.name, phone: c.phone }))} />;
 }
