@@ -267,6 +267,120 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["sale_return_items"]["Insert"]>;
         Relationships: [];
       };
+      customers: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          address: string | null;
+          loyalty_points: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          phone?: string | null;
+          email?: string | null;
+          address?: string | null;
+          loyalty_points?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
+        Relationships: [];
+      };
+      suppliers: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          address: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          phone?: string | null;
+          email?: string | null;
+          address?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
+        Relationships: [];
+      };
+      purchases: {
+        Row: {
+          id: string;
+          organization_id: string;
+          branch_id: string;
+          supplier_id: string | null;
+          purchase_number: string;
+          status: string;
+          subtotal: number;
+          discount_total: number;
+          tax_total: number;
+          grand_total: number;
+          paid_total: number;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          branch_id: string;
+          supplier_id?: string | null;
+          purchase_number: string;
+          status?: string;
+          subtotal?: number;
+          discount_total?: number;
+          tax_total?: number;
+          grand_total?: number;
+          paid_total?: number;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchases"]["Insert"]>;
+        Relationships: [];
+      };
+      purchase_items: {
+        Row: {
+          id: string;
+          organization_id: string;
+          purchase_id: string;
+          variant_id: string;
+          quantity: number;
+          unit_cost: number;
+          discount_total: number;
+          tax_total: number;
+          line_total: number;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          purchase_id: string;
+          variant_id: string;
+          quantity: number;
+          unit_cost: number;
+          discount_total?: number;
+          tax_total?: number;
+          line_total: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

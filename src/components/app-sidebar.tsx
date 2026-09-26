@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  Boxes,
   Building2,
   LayoutDashboard,
+  LogOut,
   Menu,
   Package,
   ReceiptText,
@@ -18,21 +18,47 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { switchBranch } from "@/app/actions/branch";
+import { signOut } from "@/app/auth/actions";
 import { navItems } from "@/lib/pos-demo-data";
 
-type AppSidebarProps = {
-  activeItem: (typeof navItems)[number];
-  branchName: string;
-  currency: string;
-  organizationName: string;
-  timezone: string;
+type BranchOption = {
+  id: string;
+  name: string;
+  code: string;
 };
+
+export type AppSidebarProps = {
+  activeItem: (typeof navItems)[number];
+  branchId?: string;
+  branchName?: string;
+  branches?: BranchOption[];
+  currency?: string;
+  organizationName?: string;
+  timezone?: string;
+};
+
+export function SidebarFallback({ activeItem }: { activeItem: (typeof navItems)[number] }) {
+  return (
+    <AppSidebar
+      activeItem={activeItem}
+      branchName="Branch"
+      currency="PKR"
+      organizationName="Awan POS"
+      timezone="Asia/Karachi"
+    />
+  );
+}
 
 const routes: Partial<Record<(typeof navItems)[number], string>> = {
   Dashboard: "/",
   POS: "/pos",
   Sales: "/pos/sales",
   Products: "/products",
+  Purchases: "/purchases",
+  Customers: "/customers",
+  Reports: "/reports",
+  Settings: "/settings",
 };
 
 const icons: Record<(typeof navItems)[number], LucideIcon> = {
@@ -40,7 +66,6 @@ const icons: Record<(typeof navItems)[number], LucideIcon> = {
   POS: ShoppingCart,
   Sales: ReceiptText,
   Products: Package,
-  Inventory: Boxes,
   Purchases: ReceiptText,
   Customers: Users,
   Reports: BarChart3,
@@ -50,7 +75,9 @@ const icons: Record<(typeof navItems)[number], LucideIcon> = {
 export function AppSidebar(props: AppSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const initials = props.organizationName
+  const orgName = props.organizationName || "Awan POS";
+  const branchName = props.branchName || "Main Branch";
+  const initials = orgName
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
@@ -60,7 +87,7 @@ export function AppSidebar(props: AppSidebarProps) {
   return (
     <>
       <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:hidden">
-        <Brand initials={initials} organizationName={props.organizationName} />
+        <Brand initials={initials} organizationName={orgName} />
         <button
           aria-expanded={open}
           aria-label="Open navigation"
@@ -85,7 +112,7 @@ export function AppSidebar(props: AppSidebarProps) {
         className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-border bg-surface p-4 transition-transform lg:sticky lg:top-0 lg:z-10 lg:h-screen lg:w-auto lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between px-1 pb-6 pt-1">
-          <Brand initials={initials} organizationName={props.organizationName} />
+          <Brand initials={initials} organizationName={orgName} />
           <button
             aria-label="Close navigation"
             className="grid size-9 place-items-center rounded-md text-muted hover:bg-surface-subtle lg:hidden"
@@ -126,15 +153,57 @@ export function AppSidebar(props: AppSidebarProps) {
           })}
         </nav>
 
-        <div className="mt-auto rounded-md border border-border bg-surface-subtle p-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted">
-            <Building2 aria-hidden="true" size={15} />
-            Active branch
+        <div className="mt-auto space-y-2">
+          <div className="rounded-md border border-border bg-surface-subtle p-3">
+            <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted">
+              <span className="flex items-center gap-1.5">
+                <Building2 aria-hidden="true" size={14} />
+                Branch
+              </span>
+              {props.branches && props.branches.length > 1 ? (
+                <span className="text-[10px] font-normal lowercase tracking-normal text-muted">
+                  {props.branches.length} branches
+                </span>
+              ) : null}
+            </div>
+
+            {props.branches && props.branches.length > 1 ? (
+              <form action={switchBranch} className="mt-2">
+                <label htmlFor="sidebar-branch-select" className="sr-only">
+                  Switch active branch
+                </label>
+                <select
+                  id="sidebar-branch-select"
+                  name="branchId"
+                  defaultValue={props.branchId}
+                  onChange={(e) => e.target.form?.requestSubmit()}
+                  className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-border-strong focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                >
+                  {props.branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.code})
+                    </option>
+                  ))}
+                </select>
+              </form>
+            ) : (
+              <p className="mt-2 truncate text-sm font-semibold">{branchName}</p>
+            )}
+
+            <p className="mt-1 truncate text-xs text-muted">
+              {props.timezone || "Asia/Karachi"} / {props.currency || "PKR"}
+            </p>
           </div>
-          <p className="mt-2 truncate text-sm font-semibold">{props.branchName}</p>
-          <p className="mt-1 truncate text-xs text-muted">
-            {props.timezone} / {props.currency}
-          </p>
+
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex h-9 w-full items-center gap-2.5 rounded-md px-3 text-xs font-medium text-muted hover:bg-surface-subtle hover:text-danger transition-colors"
+            >
+              <LogOut aria-hidden="true" size={15} className="shrink-0" />
+              <span>Sign out</span>
+            </button>
+          </form>
         </div>
       </aside>
     </>

@@ -3,7 +3,6 @@ export const navItems = [
   "POS",
   "Sales",
   "Products",
-  "Inventory",
   "Purchases",
   "Customers",
   "Reports",
