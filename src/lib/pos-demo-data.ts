@@ -4,6 +4,7 @@ export const navItems = [
   "Sales",
   "Products",
   "Purchases",
+  "Expenses",
   "Customers",
   "Reports",
   "Settings",

@@ -19,7 +19,9 @@ const quantitySchema = z.coerce
 const checkoutSchema = z.object({
   shiftId: z.string().uuid(),
   checkoutKey: z.string().uuid(),
-  cashReceived: money,
+  amountReceived: money,
+  paymentMethod: z.enum(["cash", "card", "bank_transfer", "wallet", "credit"]),
+  customerId: z.string().uuid().optional().nullable(),
   items: z.array(z.object({
     variant_id: z.string().uuid(),
     quantity: quantitySchema,
@@ -33,6 +35,7 @@ function saleError(message: string): string {
   if (message.includes("Open register not found")) return "The register is closed. Open a register to continue.";
   if (message.includes("no longer available")) return "A product is no longer available. Remove it from the cart.";
   if (message.includes("Cash received")) return "Cash received must cover the total.";
+  if (message.includes("Select a customer")) return "Select a customer before completing a credit sale.";
   return "Could not complete the sale. Please check the cart and try again.";
 }
 
@@ -82,36 +85,27 @@ export async function completeCashSale(
   const parsed = checkoutSchema.safeParse({
     shiftId: formData.get("shiftId"),
     checkoutKey: formData.get("checkoutKey"),
-    cashReceived: formData.get("cashReceived"),
+    amountReceived: formData.get("amountReceived"),
+    paymentMethod: formData.get("paymentMethod") || "cash",
+    customerId: formData.get("customerId") || null,
     items,
   });
-  if (!parsed.success) return { error: "Review the cart and cash received, then try again." };
+  if (!parsed.success) return { error: "Review the cart and payment details, then try again." };
 
   const { organization, branch } = await getCurrentWorkspace();
   if (!branch) return { error: "No active branch is available." };
   const supabase = await createClient();
-  const { data: saleId, error } = await supabase.rpc("complete_cash_sale", {
+  const { data: saleId, error } = await supabase.rpc("complete_pos_sale", {
     p_organization_id: organization.id,
     p_branch_id: branch.id,
     p_shift_id: parsed.data.shiftId,
     p_checkout_key: parsed.data.checkoutKey,
+    p_customer_id: parsed.data.customerId ?? null,
     p_items: parsed.data.items,
-    p_cash_received: parsed.data.cashReceived,
+    p_amount_received: parsed.data.amountReceived,
+    p_payment_method: parsed.data.paymentMethod,
   });
   if (error || !saleId) return { error: saleError(error?.message ?? "") };
-
-  const customerId = formData.get("customerId");
-  if (
-    customerId &&
-    typeof customerId === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(customerId)
-  ) {
-    await supabase
-      .from("sales")
-      .update({ customer_id: customerId })
-      .eq("id", saleId)
-      .eq("organization_id", organization.id);
-  }
 
   revalidatePath("/pos");
   revalidatePath("/customers");

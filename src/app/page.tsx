@@ -1,8 +1,4 @@
-import {
-  activity,
-  metrics,
-  setupSteps,
-} from "@/lib/pos-demo-data";
+import { setupSteps } from "@/lib/pos-demo-data";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { createClient } from "@/lib/supabase/server";
@@ -22,7 +18,16 @@ import {
 export default async function Home() {
   const { organization, branch, branches } = await getCurrentWorkspace();
   const supabase = await createClient();
-  const [{ data: catalogProducts }, { data: catalogVariants }, { data: openShift }] =
+  const [
+    { data: catalogProducts },
+    { data: catalogVariants },
+    { data: openShift },
+    { data: sales },
+    { data: saleItems },
+    { data: returns },
+    { data: expenses },
+    { data: auditLogs },
+  ] =
     await Promise.all([
       supabase
         .from("products")
@@ -44,6 +49,40 @@ export default async function Home() {
             .eq("status", "open")
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      branch
+        ? supabase
+            .from("sales")
+            .select("id, grand_total, paid_total, created_at")
+            .eq("organization_id", organization.id)
+            .eq("branch_id", branch.id)
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("sale_items")
+        .select("quantity, unit_cost")
+        .eq("organization_id", organization.id)
+        .limit(1000),
+      branch
+        ? supabase
+            .from("sale_returns")
+            .select("refund_total")
+            .eq("organization_id", organization.id)
+            .eq("branch_id", branch.id)
+        : Promise.resolve({ data: [] }),
+      branch
+        ? supabase
+            .from("expenses")
+            .select("amount")
+            .eq("organization_id", organization.id)
+            .eq("branch_id", branch.id)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("audit_logs")
+        .select("action, entity_type, created_at")
+        .eq("organization_id", organization.id)
+        .order("created_at", { ascending: false })
+        .limit(6),
     ]);
   const variantIds = (catalogVariants ?? []).map((variant) => variant.id);
   const { data: branchStock } = branch && variantIds.length
@@ -74,11 +113,42 @@ export default async function Home() {
   const lowStockCount = inventoryProducts.filter(
     (product) => product.stock <= product.alert,
   ).length;
-  const dashboardMetrics = metrics.map((metric) =>
-    metric.label === "Low stock"
-      ? { ...metric, value: `${lowStockCount} SKUs`, delta: lowStockCount ? "Needs review" : "Stock healthy" }
-      : metric,
+  const todayKey = new Intl.DateTimeFormat("en-CA", {
+    timeZone: organization.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const todaysSales = (sales ?? []).filter((sale) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: organization.timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(sale.created_at)) === todayKey,
   );
+  const todayRevenue = todaysSales.reduce((sum, sale) => sum + Number(sale.grand_total), 0);
+  const totalRefunds = (returns ?? []).reduce((sum, row) => sum + Number(row.refund_total), 0);
+  const cogs = (saleItems ?? []).reduce(
+    (sum, item) => sum + Number(item.quantity) * Number(item.unit_cost),
+    0,
+  );
+  const expenseTotal = (expenses ?? []).reduce((sum, item) => sum + Number(item.amount), 0);
+  const grossSales = (sales ?? []).reduce((sum, sale) => sum + Number(sale.grand_total), 0);
+  const grossProfit = grossSales - totalRefunds - cogs - expenseTotal;
+  const paidTotal = (sales ?? []).reduce((sum, sale) => sum + Number(sale.paid_total), 0);
+  const receivables = Math.max(0, grossSales - paidTotal);
+  const money = (value: number) =>
+    `${organization.currency_code.trim()} ${value.toLocaleString("en-PK", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const dashboardMetrics = [
+    { label: "Today sales", value: money(todayRevenue), delta: `${todaysSales.length} receipts` },
+    { label: "Gross profit", value: money(grossProfit), delta: `Expenses ${money(expenseTotal)}` },
+    { label: "Receivables", value: money(receivables), delta: receivables ? "Customer balances due" : "No unpaid sales" },
+    { label: "Low stock", value: `${lowStockCount} SKUs`, delta: lowStockCount ? "Needs review" : "Stock healthy" },
+  ];
   const dashboardSetupSteps = setupSteps.map((step) =>
     step.label === "Products imported" || step.label === "Opening stock added"
       ? { ...step, done: inventoryProducts.length > 0 }
@@ -89,6 +159,15 @@ export default async function Home() {
     timeZone: organization.timezone,
   }).format(new Date());
   const metricIcons = [Banknote, TrendingUp, WalletCards, TriangleAlert];
+  const recentActivity = (auditLogs ?? []).map((item) => {
+    const label = `${item.entity_type} ${item.action}`;
+    const when = new Intl.DateTimeFormat("en-PK", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: organization.timezone,
+    }).format(new Date(item.created_at));
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)} · ${when}`;
+  });
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -219,11 +298,15 @@ export default async function Home() {
               <article className="rounded-md border border-border bg-surface p-4">
                 <h2 className="text-sm font-semibold">Recent activity</h2>
                 <div className="mt-3 divide-y divide-border">
-                  {activity.map((item) => (
+                  {recentActivity.length ? recentActivity.map((item) => (
                     <p className="py-3 text-sm text-muted-strong" key={item}>
                       {item}
                     </p>
-                  ))}
+                  )) : (
+                    <p className="py-3 text-sm text-muted-strong">
+                      No activity yet. Complete a sale, receive stock, or record an expense to start the audit trail.
+                    </p>
+                  )}
                 </div>
               </article>
             </section>

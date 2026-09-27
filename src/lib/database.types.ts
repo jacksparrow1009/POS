@@ -238,8 +238,8 @@ export type Database = {
         Relationships: [];
       };
       sales: {
-        Row: { id: string; organization_id: string; branch_id: string; register_shift_id: string | null; customer_id: string | null; checkout_key: string | null; receipt_number: string; status: string; subtotal: number; discount_total: number; tax_total: number; grand_total: number; paid_total: number; change_total: number; notes: string | null; created_by: string | null; created_at: string; updated_at: string };
-        Insert: { id?: string; organization_id: string; branch_id: string; register_shift_id?: string | null; customer_id?: string | null; checkout_key?: string | null; receipt_number: string; status?: string; subtotal?: number; discount_total?: number; tax_total?: number; grand_total?: number; paid_total?: number; change_total?: number; notes?: string | null; created_by?: string | null; created_at?: string; updated_at?: string };
+        Row: { id: string; organization_id: string; branch_id: string; register_shift_id: string | null; customer_id: string | null; checkout_key: string | null; receipt_number: string; status: string; subtotal: number; discount_total: number; tax_total: number; grand_total: number; paid_total: number; change_total: number; payment_method: string; notes: string | null; created_by: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; organization_id: string; branch_id: string; register_shift_id?: string | null; customer_id?: string | null; checkout_key?: string | null; receipt_number: string; status?: string; subtotal?: number; discount_total?: number; tax_total?: number; grand_total?: number; paid_total?: number; change_total?: number; payment_method?: string; notes?: string | null; created_by?: string | null; created_at?: string; updated_at?: string };
         Update: Partial<Database["public"]["Tables"]["sales"]["Insert"]>;
         Relationships: [];
       };
@@ -381,10 +381,31 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["purchase_items"]["Insert"]>;
         Relationships: [];
       };
+      expenses: {
+        Row: { id: string; organization_id: string; branch_id: string | null; category: string; amount: number; payment_method: string; notes: string | null; spent_at: string; created_by: string | null; created_at: string };
+        Insert: { id?: string; organization_id: string; branch_id?: string | null; category: string; amount: number; payment_method?: string; notes?: string | null; spent_at?: string; created_by?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["expenses"]["Insert"]>;
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: { id: string; organization_id: string; plan_code: string; status: string; trial_ends_at: string | null; current_period_ends_at: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; organization_id: string; plan_code: string; status?: string; trial_ends_at?: string | null; current_period_ends_at?: string | null; created_at?: string; updated_at?: string };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: { id: string; organization_id: string; actor_id: string | null; action: string; entity_type: string; entity_id: string | null; metadata: Json; created_at: string };
+        Insert: { id?: string; organization_id: string; actor_id?: string | null; action: string; entity_type: string; entity_id?: string | null; metadata?: Json; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["audit_logs"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       return_cash_sale: { Args: { p_organization_id: string; p_branch_id: string; p_shift_id: string; p_sale_id: string; p_return_key: string; p_items: Json; p_reason: string }; Returns: string };
+      complete_pos_sale: { Args: { p_organization_id: string; p_branch_id: string; p_shift_id: string; p_checkout_key: string; p_customer_id: string | null; p_items: Json; p_amount_received: number; p_payment_method: string }; Returns: string };
+      receive_stock_purchase: { Args: { p_organization_id: string; p_branch_id: string; p_supplier_name: string; p_variant_id: string; p_quantity: number; p_unit_cost: number; p_notes: string }; Returns: string };
+      record_expense: { Args: { p_organization_id: string; p_branch_id: string | null; p_category: string; p_amount: number; p_payment_method: string; p_notes: string; p_spent_at: string | null }; Returns: string };
       open_register: { Args: { p_organization_id: string; p_branch_id: string; p_opening_cash: number }; Returns: string };
       close_register: { Args: { p_organization_id: string; p_branch_id: string; p_shift_id: string; p_closing_cash: number }; Returns: undefined };
       complete_cash_sale: { Args: { p_organization_id: string; p_branch_id: string; p_shift_id: string; p_checkout_key: string; p_items: Json; p_cash_received: number }; Returns: string };

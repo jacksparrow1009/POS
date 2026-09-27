@@ -18,6 +18,7 @@ export default async function ReportsPage() {
     { data: saleItems, error: itemsError },
     { data: returns, error: returnsError },
     { data: shifts, error: shiftsError },
+    { data: expenses, error: expensesError },
     { data: variants },
     { data: products },
   ] = await Promise.all([
@@ -44,6 +45,11 @@ export default async function ReportsPage() {
       .order("opened_at", { ascending: false })
       .limit(15),
     supabase
+      .from("expenses")
+      .select("amount, category, spent_at")
+      .eq("organization_id", organization.id)
+      .eq("branch_id", branch?.id ?? ""),
+    supabase
       .from("product_variants")
       .select("id, product_id, sku")
       .eq("organization_id", organization.id),
@@ -53,7 +59,7 @@ export default async function ReportsPage() {
       .eq("organization_id", organization.id),
   ]);
 
-  if (salesError || itemsError || returnsError || shiftsError) {
+  if (salesError || itemsError || returnsError || shiftsError || expensesError) {
     throw new Error("Could not load business reports. Please try again.");
   }
 
@@ -73,7 +79,9 @@ export default async function ReportsPage() {
     (sum, item) => sum + Number(item.unit_cost) * Number(item.quantity),
     0,
   );
+  const operatingExpenses = (expenses ?? []).reduce((sum, item) => sum + Number(item.amount), 0);
   const grossProfit = netRevenue - cogs;
+  const netProfit = grossProfit - operatingExpenses;
   const grossMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
   const averageOrderValue = (sales ?? []).length > 0 ? netRevenue / (sales ?? []).length : 0;
 
@@ -135,13 +143,13 @@ export default async function ReportsPage() {
 
           <div className="rounded-md border border-border bg-surface p-4">
             <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted">
-              <span>Gross Profit</span>
+              <span>Net Profit</span>
               <TrendingUp size={17} className="text-success" />
             </div>
             <p className="mt-3 text-2xl font-bold tabular-nums text-success">
-              {money(grossProfit)}
+              {money(netProfit)}
             </p>
-            <p className="mt-1 text-xs text-muted">Estimated COGS: {money(cogs)}</p>
+            <p className="mt-1 text-xs text-muted">COGS {money(cogs)} · Expenses {money(operatingExpenses)}</p>
           </div>
 
           <div className="rounded-md border border-border bg-surface p-4">

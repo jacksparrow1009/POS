@@ -48,6 +48,7 @@ export function PosRegister({
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [cashReceived, setCashReceived] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "bank_transfer" | "wallet" | "credit">("cash");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [checkoutState, checkoutAction] = useActionState(completeCashSale, { error: null });
@@ -67,6 +68,9 @@ export function PosRegister({
   const total = cartItems.reduce((sum, item) => sum + item.price * (cart[item.id] ?? 0), 0);
   const numericCash = Number(cashReceived || 0);
   const change = Math.max(0, numericCash - total);
+  const amountDue = Math.max(0, total - numericCash);
+  const requiresFullTender = paymentMethod === "cash";
+  const requiresCustomer = paymentMethod === "credit";
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -463,6 +467,7 @@ export function PosRegister({
             >
               <input type="hidden" name="shiftId" value={shift.id} />
               <input type="hidden" name="checkoutKey" ref={keyInputRef} />
+              <input type="hidden" name="paymentMethod" value={paymentMethod} />
               <input
                 type="hidden"
                 name="items"
@@ -495,6 +500,28 @@ export function PosRegister({
                 </select>
               </div>
 
+              <div>
+                <label htmlFor="paymentMethod" className="block text-xs font-semibold uppercase text-muted">
+                  Payment method
+                </label>
+                <select
+                  id="paymentMethod"
+                  value={paymentMethod}
+                  onChange={(event) => {
+                    const next = event.target.value as typeof paymentMethod;
+                    setPaymentMethod(next);
+                    if (next === "credit") setCashReceived("0");
+                  }}
+                  className="mt-1 h-9 w-full rounded-md border border-border bg-surface px-2.5 text-xs outline-none focus:border-brand"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank_transfer">Bank transfer</option>
+                  <option value="wallet">Wallet</option>
+                  <option value="credit">Customer credit / khata</option>
+                </select>
+              </div>
+
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Subtotal</span>
                 <span className="font-semibold tabular-nums">{money(total)}</span>
@@ -521,9 +548,9 @@ export function PosRegister({
                   <input
                     id="cashReceived"
                     ref={cashInputRef}
-                    name="cashReceived"
+                    name="amountReceived"
                     type="number"
-                    min={total}
+                    min={requiresFullTender ? total : 0}
                     step="0.01"
                     required
                     value={cashReceived}
@@ -533,7 +560,6 @@ export function PosRegister({
                   />
                 </div>
 
-                {/* Quick Tender Note Chips */}
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
@@ -561,9 +587,17 @@ export function PosRegister({
                 </div>
               </div>
 
-              <div className="flex justify-between rounded-md bg-surface-subtle p-3 text-sm">
-                <span className="font-medium text-muted">Change due</span>
-                <span className="font-bold tabular-nums text-foreground">{money(change)}</span>
+              <div className="rounded-md bg-surface-subtle p-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium text-muted">Change due</span>
+                  <span className="font-bold tabular-nums text-foreground">{money(change)}</span>
+                </div>
+                {!requiresFullTender ? (
+                  <div className="mt-2 flex justify-between border-t border-border/70 pt-2">
+                    <span className="font-medium text-muted">Balance to customer account</span>
+                    <span className="font-bold tabular-nums text-danger">{money(amountDue)}</span>
+                  </div>
+                ) : null}
               </div>
 
               {checkoutState.error ? (
@@ -574,10 +608,14 @@ export function PosRegister({
 
               <SubmitButton
                 pendingLabel="Completing sale..."
-                disabled={!cartItems.length || numericCash < total}
+                disabled={
+                  !cartItems.length ||
+                  (requiresFullTender && numericCash < total) ||
+                  (requiresCustomer && !selectedCustomerId)
+                }
                 className="h-11 w-full rounded-md bg-brand px-4 font-semibold text-white shadow-xs transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Complete cash sale
+                Complete sale
               </SubmitButton>
             </form>
 
