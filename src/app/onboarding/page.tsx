@@ -57,8 +57,8 @@ export default async function OnboardingPage({
               <span className="text-sm font-medium">Business name</span>
               <input
                 className="mt-2 h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-                defaultValue="Awan Mart"
                 name="organizationName"
+                placeholder="Enter business name"
                 required
               />
             </label>
@@ -67,8 +67,8 @@ export default async function OnboardingPage({
               <span className="text-sm font-medium">Business slug</span>
               <input
                 className="mt-2 h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-                defaultValue="awan-mart"
                 name="organizationSlug"
+                placeholder="business-name"
                 pattern="[a-z0-9-]+"
                 required
               />
@@ -78,8 +78,8 @@ export default async function OnboardingPage({
               <span className="text-sm font-medium">First branch</span>
               <input
                 className="mt-2 h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-                defaultValue="Gulberg Branch"
                 name="branchName"
+                placeholder="Enter branch name"
                 required
               />
             </label>
@@ -88,9 +88,9 @@ export default async function OnboardingPage({
               <span className="text-sm font-medium">Branch code</span>
               <input
                 className="mt-2 h-11 w-full rounded-md border border-border-strong bg-surface px-3 text-sm uppercase outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-                defaultValue="GLB"
                 maxLength={12}
                 name="branchCode"
+                placeholder="BR01"
                 required
               />
             </label>

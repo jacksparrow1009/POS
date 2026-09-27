@@ -1,4 +1,3 @@
-import { setupSteps } from "@/lib/pos-demo-data";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { createClient } from "@/lib/supabase/server";
@@ -27,6 +26,7 @@ export default async function Home() {
     { data: returns },
     { data: expenses },
     { data: auditLogs },
+    { data: subscription },
   ] =
     await Promise.all([
       supabase
@@ -83,6 +83,11 @@ export default async function Home() {
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false })
         .limit(6),
+      supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("organization_id", organization.id)
+        .maybeSingle(),
     ]);
   const variantIds = (catalogVariants ?? []).map((variant) => variant.id);
   const { data: branchStock } = branch && variantIds.length
@@ -149,11 +154,13 @@ export default async function Home() {
     { label: "Receivables", value: money(receivables), delta: receivables ? "Customer balances due" : "No unpaid sales" },
     { label: "Low stock", value: `${lowStockCount} SKUs`, delta: lowStockCount ? "Needs review" : "Stock healthy" },
   ];
-  const dashboardSetupSteps = setupSteps.map((step) =>
-    step.label === "Products imported" || step.label === "Opening stock added"
-      ? { ...step, done: inventoryProducts.length > 0 }
-      : step,
-  );
+  const dashboardSetupSteps = [
+    { label: "Business created", done: Boolean(organization.id) },
+    { label: "Branch configured", done: Boolean(branch?.id) },
+    { label: "Products added", done: inventoryProducts.length > 0 },
+    { label: "Opening stock added", done: inventoryProducts.some((product) => product.stock > 0) },
+    { label: "Subscription active", done: Boolean(subscription?.status && subscription.status !== "canceled") },
+  ];
   const currentDate = new Intl.DateTimeFormat("en-PK", {
     dateStyle: "full",
     timeZone: organization.timezone,

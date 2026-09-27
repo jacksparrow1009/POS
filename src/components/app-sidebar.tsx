@@ -21,7 +21,18 @@ import {
 import { useState } from "react";
 import { switchBranch } from "@/app/actions/branch";
 import { signOut } from "@/app/auth/actions";
-import { navItems } from "@/lib/pos-demo-data";
+
+const navItems = [
+  "Dashboard",
+  "POS",
+  "Sales",
+  "Products",
+  "Purchases",
+  "Expenses",
+  "Customers",
+  "Reports",
+  "Settings",
+] as const;
 
 type BranchOption = {
   id: string;

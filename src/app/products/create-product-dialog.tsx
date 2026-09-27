@@ -62,7 +62,7 @@ export function CreateProductDialog({ error }: CreateProductDialogProps) {
             </p>
           ) : null}
 
-          <Field autoFocus label="Product name" name="name" placeholder="Coke 500ml" required />
+          <Field autoFocus label="Product name" name="name" placeholder="Enter product name" required />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="SKU" name="sku" placeholder="BEV-001" />
             <Field label="Barcode" name="barcode" placeholder="Scan or type" />
