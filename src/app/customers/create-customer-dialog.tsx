@@ -18,7 +18,7 @@ export function CreateCustomerDialog() {
   return (
     <>
       <button
-        className="inline-flex h-10 items-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-hover"
+        className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-white shadow-xs hover:bg-brand"
         onClick={() => dialogRef.current?.showModal()}
         type="button"
       >
@@ -33,7 +33,7 @@ export function CreateCustomerDialog() {
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="flex gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-soft text-brand">
+            <div className="grid size-10 shrink-0 place-items-center rounded-md bg-surface-subtle text-muted-strong">
               <UserPlus aria-hidden="true" size={20} />
             </div>
             <div>
@@ -71,7 +71,7 @@ export function CreateCustomerDialog() {
             <input
               name="name"
               required
-              placeholder="e.g. Tariq Mehmood"
+              placeholder="Enter full name"
               className="mt-1.5 h-11 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/10"
             />
           </label>
@@ -92,7 +92,7 @@ export function CreateCustomerDialog() {
               <input
                 name="email"
                 type="email"
-                placeholder="customer@gmail.com"
+                placeholder="Enter email address"
                 className="mt-1.5 h-11 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
@@ -102,7 +102,7 @@ export function CreateCustomerDialog() {
             Address / Shop location
             <input
               name="address"
-              placeholder="e.g. House #14, Street 2, Main Market"
+              placeholder="Enter address or shop location"
               className="mt-1.5 h-11 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/10"
             />
           </label>
@@ -117,7 +117,7 @@ export function CreateCustomerDialog() {
             </button>
             <SubmitButton
               pendingLabel="Saving customer..."
-              className="h-10 rounded-md bg-brand px-5 text-sm font-semibold text-white hover:bg-brand-hover"
+              className="h-10 rounded-md bg-foreground px-5 text-sm font-semibold text-white hover:bg-brand"
             >
               Save customer
             </SubmitButton>
