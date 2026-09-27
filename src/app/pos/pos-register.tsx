@@ -135,10 +135,10 @@ export function PosRegister({
 
   return (
     <section className="min-w-0">
-      <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-4 lg:px-6">
+      <header className="flex min-h-24 flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-5 lg:px-8">
         <div>
-          <p className="text-xs font-semibold uppercase text-muted">{branchName}</p>
-          <h1 className="mt-1 text-xl font-semibold">Point of sale</h1>
+          <p className="text-xs font-medium text-muted">{branchName}</p>
+          <h1 className="mt-1 text-2xl font-semibold">Point of sale</h1>
         </div>
         <div className="flex items-center gap-3">
           {shift ? (
@@ -193,7 +193,7 @@ export function PosRegister({
           </div>
         </div>
       ) : (
-        <div className="grid min-w-0 gap-5 p-5 lg:p-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid min-w-0 gap-5 p-5 lg:p-8 xl:grid-cols-[minmax(0,1fr)_400px]">
           <div className="min-w-0">
             {/* Search & Layout Controls */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -274,7 +274,7 @@ export function PosRegister({
             </div>
 
             {/* Product Catalog Display */}
-            <div className="mt-4 overflow-hidden rounded-md border border-border bg-surface">
+            <div className="mt-4 overflow-hidden rounded-md border border-border bg-surface shadow-xs">
               {filtered.length === 0 ? (
                 <div className="px-4 py-16 text-center text-sm text-muted">
                   No products found matching &ldquo;{query}&rdquo;.
@@ -293,10 +293,10 @@ export function PosRegister({
                           type="button"
                           disabled={isOutOfStock}
                           onClick={() => addItem(item)}
-                          className={`group flex flex-col justify-between rounded-md border p-3 text-left transition-all ${
+                          className={`group min-h-32 flex flex-col justify-between rounded-md border p-3 text-left ${
                             inCart > 0
-                              ? "border-brand/40 bg-brand-soft/20 shadow-xs"
-                              : "border-border bg-surface hover:border-brand/30 hover:bg-surface-subtle"
+                              ? "border-brand bg-brand-soft shadow-xs"
+                              : "border-border bg-surface hover:border-border-strong hover:bg-surface-subtle"
                           } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                         >
                           <div className="min-w-0">
@@ -378,7 +378,7 @@ export function PosRegister({
           </div>
 
           {/* Cart & Checkout Panel */}
-          <aside className="self-start rounded-md border border-border bg-surface xl:sticky xl:top-5">
+          <aside className="self-start overflow-hidden rounded-md border border-border bg-surface shadow-xs xl:sticky xl:top-5">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
                 <ShoppingCart aria-hidden="true" size={17} /> Current sale
@@ -536,7 +536,7 @@ export function PosRegister({
               <div>
                 <div className="flex items-center justify-between">
                   <label htmlFor="cashReceived" className="text-sm font-medium">
-                    Cash received
+                    {paymentMethod === "cash" ? "Cash received" : paymentMethod === "credit" ? "Deposit received" : "Amount received"}
                   </label>
                   <span className="text-[11px] text-muted">Press F4 to focus</span>
                 </div>
@@ -560,7 +560,7 @@ export function PosRegister({
                   />
                 </div>
 
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                {paymentMethod === "cash" ? <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setCashReceived(total > 0 ? String(total) : "")}
@@ -584,7 +584,7 @@ export function PosRegister({
                       </button>
                     );
                   })}
-                </div>
+                </div> : null}
               </div>
 
               <div className="rounded-md bg-surface-subtle p-3 text-sm">
@@ -613,7 +613,7 @@ export function PosRegister({
                   (requiresFullTender && numericCash < total) ||
                   (requiresCustomer && !selectedCustomerId)
                 }
-                className="h-11 w-full rounded-md bg-brand px-4 font-semibold text-white shadow-xs transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-11 w-full rounded-md bg-foreground px-4 font-semibold text-white shadow-xs hover:bg-brand disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Complete sale
               </SubmitButton>

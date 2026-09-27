@@ -183,31 +183,31 @@ export default async function Home() {
         />
 
         <section className="min-w-0">
-          <header className="flex min-h-20 flex-col gap-4 border-b border-border bg-surface px-5 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
+          <header className="flex min-h-24 flex-col gap-4 border-b border-border bg-surface px-5 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
             <div>
-              <p className="text-xs font-semibold uppercase text-muted">
+              <p className="text-xs font-medium text-muted">
                 {currentDate}
               </p>
-              <h1 className="mt-1 text-xl font-semibold tracking-normal">
-                Overview
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal">
+                Good day. Here is your store.
               </h1>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-hover" href="/products">
+              <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand" href="/products">
                 <ShoppingCart aria-hidden="true" size={17} />
                 Manage products
               </Link>
             </div>
           </header>
 
-          <div className="grid gap-5 p-5 lg:p-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid gap-5 p-5 lg:p-8 2xl:grid-cols-[minmax(0,1fr)_380px]">
             <section className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {dashboardMetrics.map((metric, index) => {
                   const Icon = metricIcons[index];
                   return (
                   <article
-                    className="rounded-md border border-border bg-surface p-4"
+                    className="rounded-md border border-border bg-surface p-5 shadow-xs"
                     key={metric.label}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -216,7 +216,7 @@ export default async function Home() {
                         <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
                       </span>
                     </div>
-                    <p className="mt-4 text-2xl font-semibold tabular-nums">{metric.value}</p>
+                    <p className="mt-5 text-2xl font-semibold tabular-nums">{metric.value}</p>
                     <p className="mt-2 text-xs font-medium text-brand">
                       {metric.delta}
                     </p>
@@ -226,7 +226,7 @@ export default async function Home() {
               </div>
 
               <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-                <article className="rounded-md border border-border bg-surface">
+                <article className="overflow-hidden rounded-md border border-border bg-surface shadow-xs">
                   <div className="flex items-center justify-between gap-4 border-b border-border p-4">
                     <div>
                     <h2 className="text-sm font-semibold">Inventory watch</h2>
@@ -282,7 +282,7 @@ export default async function Home() {
                   ) : null}
                 </article>
 
-                <article className="rounded-md border border-border bg-surface p-4">
+                <article className="rounded-md border border-border bg-surface p-5 shadow-xs">
                   <h2 className="text-sm font-semibold">Setup progress</h2>
                   <div className="mt-4 space-y-3">
                     {dashboardSetupSteps.map(({ label, done }) => (
@@ -295,7 +295,7 @@ export default async function Home() {
                 </article>
               </div>
 
-              <article className="rounded-md border border-border bg-surface p-4">
+              <article className="rounded-md border border-border bg-surface p-5 shadow-xs">
                 <h2 className="text-sm font-semibold">Recent activity</h2>
                 <div className="mt-3 divide-y divide-border">
                   {recentActivity.length ? recentActivity.map((item) => (
@@ -311,7 +311,7 @@ export default async function Home() {
               </article>
             </section>
 
-            <aside className="self-start rounded-md border border-border bg-surface p-5 2xl:sticky 2xl:top-5">
+            <aside className="self-start rounded-md border border-border bg-surface p-5 shadow-xs 2xl:sticky 2xl:top-5">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold">Counter register</h2>
