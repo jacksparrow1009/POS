@@ -6,14 +6,15 @@ export default async function SettingsPage() {
 
   return (
     <section className="min-w-0">
-      <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-4 lg:px-6">
+      <header className="flex min-h-24 flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-5 lg:px-8">
         <div>
-          <p className="text-xs font-semibold uppercase text-muted">Configuration</p>
-          <h1 className="mt-1 text-xl font-semibold">Store &amp; Branch Settings</h1>
+          <p className="text-xs font-medium text-muted">Workspace settings</p>
+          <h1 className="mt-1 text-2xl font-semibold">Store and branch</h1>
+          <p className="mt-1 text-sm text-muted">Manage the details used across registers, receipts, and reports.</p>
         </div>
       </header>
 
-      <div className="p-5 lg:p-6">
+      <div className="p-5 lg:p-8">
         <SettingsForm
           initialOrg={{
             name: organization.name,
